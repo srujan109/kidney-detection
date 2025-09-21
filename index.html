@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Kidney Dark Object Detection</title>
+</head>
+<body>
+    <h1>Upload Kidney Scan Image</h1>
+    <form method="post" enctype="multipart/form-data">
+        <input type="file" name="file" required>
+        <input type="submit" value="Upload & Detect">
+    </form>
+
+    {% if result_img %}
+    <h2>Detected Objects</h2>
+    <img src="{{ result_img }}" width="400">
+    <h2>Mask</h2>
+    <img src="{{ mask_img }}" width="400">
+    <h2>Report</h2>
+    <pre>{{ open(report_path).read() }}</pre>
+    <a href="/download/{{ report_path.split('/')[-1] }}">Download Report</a>
+    {% endif %}
+</body>
+</html>
