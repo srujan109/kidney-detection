@@ -1,4 +1,6 @@
 flask
 numpy
-pillow
 opencv-python-headless
+Pillow
+gunicorn
+werkzeug

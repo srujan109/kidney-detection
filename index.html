@@ -1,23 +1,57 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Kidney Dark Object Detection</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kidney Stone Prediction</title>
+    <style>
+        /* Simple styling for the form */
+        body { font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; }
+        h1, h2 { color: #333; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; }
+        input[type="number"] { width: 100%; padding: 8px; box-sizing: border-box; }
+        button { background-color: #007BFF; color: white; padding: 10px 15px; border: none; cursor: pointer; }
+        .prediction { margin-top: 20px; padding: 15px; border: 1px solid #ccc; background-color: #f9f9f9; }
+    </style>
 </head>
 <body>
-    <h1>Upload Kidney Scan Image</h1>
-    <form method="post" enctype="multipart/form-data">
-        <input type="file" name="file" required>
-        <input type="submit" value="Upload & Detect">
+    <h1>Kidney Stone Prediction</h1>
+    <p>Enter the patient's lab values to predict the risk of kidney stones.</p>
+
+    <form action="/" method="post">
+        <div class="form-group">
+            <label for="gravity">Gravity:</label>
+            <input type="number" step="any" id="gravity" name="gravity" required>
+        </div>
+        <div class="form-group">
+            <label for="ph">pH:</label>
+            <input type="number" step="any" id="ph" name="ph" required>
+        </div>
+        <div class="form-group">
+            <label for="osmo">Osmolarity (mOsm/L):</label>
+            <input type="number" step="any" id="osmo" name="osmo" required>
+        </div>
+        <div class="form-group">
+            <label for="cond">Conductivity (mS/cm):</label>
+            <input type="number" step="any" id="cond" name="cond" required>
+        </div>
+        <div class="form-group">
+            <label for="urea">Urea (mg/dL):</label>
+            <input type="number" step="any" id="urea" name="urea" required>
+        </div>
+        <div class="form-group">
+            <label for="calc">Calcium (mg/dL):</label>
+            <input type="number" step="any" id="calc" name="calc" required>
+        </div>
+        <button type="submit">Predict</button>
     </form>
 
-    {% if result_img %}
-    <h2>Detected Objects</h2>
-    <img src="{{ result_img }}" width="400">
-    <h2>Mask</h2>
-    <img src="{{ mask_img }}" width="400">
-    <h2>Report</h2>
-    <pre>{{ open(report_path).read() }}</pre>
-    <a href="/download/{{ report_path.split('/')[-1] }}">Download Report</a>
+    {% if prediction_text %}
+        <div class="prediction">
+            <h2>Prediction Result</h2>
+            <p>{{ prediction_text }}</p>
+        </div>
     {% endif %}
 </body>
 </html>

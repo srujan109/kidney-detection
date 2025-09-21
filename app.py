@@ -1,69 +1,55 @@
-from flask import Flask, render_template, request
 import os
-from PIL import Image
+from flask import Flask, render_template, request, jsonify
+import pickle
 import numpy as np
-import cv2
-import base64
 
+# Create the Flask application
 app = Flask(__name__)
-UPLOAD_FOLDER = "uploads"
-app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
-if not os.path.exists(UPLOAD_FOLDER):
-    os.makedirs(UPLOAD_FOLDER)
+# Load the machine learning model
+# You should train a model and save it as a .pkl file
+# This is a placeholder for your actual model file
+model = pickle.load(open('kidney_stone_model.pkl', 'rb'))
 
-# Home page
-@app.route("/")
+@app.route('/', methods=['GET', 'POST'])
 def home():
-    return render_template("index.html")
+    """
+    Handles the main page and prediction request.
+    """
+    prediction_text = None
+    if request.method == 'POST':
+        try:
+            # Get data from the form
+            gravity = float(request.form['gravity'])
+            ph = float(request.form['ph'])
+            osmo = float(request.form['osmo'])
+            cond = float(request.form['cond'])
+            urea = float(request.form['urea'])
+            calc = float(request.form['calc'])
 
-# Upload & process image
-@app.route("/upload", methods=["POST"])
-def upload():
-    file = request.files.get("file")
-    if not file:
-        return "No file uploaded"
+            # Create a numpy array for the model prediction
+            # The order must match the features used for training
+            features = np.array([[gravity, ph, osmo, cond, urea, calc]])
 
-    # Save uploaded file
-    filepath = os.path.join(app.config["UPLOAD_FOLDER"], file.filename)
-    file.save(filepath)
+            # Make the prediction
+            prediction = model.predict(features)
+            
+            # Get the result and format the message
+            result = "Risk of Stone" if prediction[0] == 1 else "No Risk of Stone"
+            prediction_text = f"The patient has a {result}."
 
-    # ----- Kidney & Stone Detection -----
-    image = Image.open(filepath).convert("L")  # grayscale
-    img = np.array(image)
+        except ValueError:
+            prediction_text = "Invalid input. Please enter numerical values."
+        except Exception as e:
+            prediction_text = f"An error occurred: {e}"
 
-    # Smooth image
-    blur = cv2.GaussianBlur(img, (5,5), 0)
+    return render_template('index.html', prediction_text=prediction_text)
 
-    # Threshold for stones (dark areas)
-    _, thresh = cv2.threshold(blur, 100, 255, cv2.THRESH_BINARY_INV)
+# You would also need to have a trained model file
+# (e.g., kidney_stone_model.pkl) in the same directory.
+# This model is a key component of the backend logic.
 
-    # Find contours (stones)
-    contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
-    # Draw stones and kidney boundary (for demo: full image as kidney)
-    output = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
-    h, w = img.shape
-    cv2.rectangle(output, (0,0), (w-1,h-1), (255,0,0), 2)  # blue box for kidney
-
-    stone_count = 0
-    report = f"Kidney Position: (0,0), Size: ({w}x{h})\n"
-    for cnt in contours:
-        area = cv2.contourArea(cnt)
-        if area > 20:  # filter noise
-            x, y, bw, bh = cv2.boundingRect(cnt)
-            cv2.rectangle(output, (x,y), (x+bw, y+bh), (0,0,255), 2)  # red box
-            stone_count += 1
-            report += f"Stone {stone_count}: Position=({x},{y}), Size=({bw}x{bh})\n"
-
-    report += f"Total Stones Detected: {stone_count}\n"
-    report += "Conclusion: Kidney stones detected. Recommend urology consultation."
-
-    # Encode image to base64 for frontend display
-    _, buffer = cv2.imencode(".png", output)
-    result_b64 = base64.b64encode(buffer).decode("utf-8")
-
-    return render_template("index.html", result_image=result_b64, report=report)
-    
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+if __name__ == '__main__':
+    # You can change the port for local development
+    # Use gunicorn or other WSGI server for production
+    app.run(debug=True, host='0.0.0.0', port=os.environ.get('PORT', 5000))
